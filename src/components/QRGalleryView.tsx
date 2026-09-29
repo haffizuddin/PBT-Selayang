@@ -217,7 +217,7 @@ export const QRGalleryView: React.FC<QRGalleryViewProps> = ({
                     </p>
                     <div className="flex items-center justify-between text-[10px] text-slate-400 mt-1.5 pt-1.5 border-t border-slate-100 font-mono">
                       <span>Tinggi: {slope.height}m</span>
-                      <span>Sudut: {slope.gradient}°</span>
+                      <span>{slope.gis ? `Kelas ${slope.gis.kelasKecerunan}` : `Sudut: ${slope.gradient}°`}</span>
                       <span>{slope.pbt.replace('Majlis Perbandaran Selayang (MPS)', 'MPS')}</span>
                     </div>
                   </div>

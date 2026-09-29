@@ -12,6 +12,21 @@ export interface SlopeCondition {
   notes: string;
 }
 
+// Attributes as shown in the Geoportal MPS popup
+export interface GeoportalRecord {
+  zonAhliMajlis: string;
+  agensi: string;
+  blokPerancangan: string;
+  blokPerancanganKecil: string;
+  tahapBahaya: string;
+  idCerun: string;
+  idJmg: string;
+  namaJalan: string;
+  tahapRisiko: string;
+  kelasKecerunan: string;
+  tinggi: string;
+}
+
 export interface Slope {
   id: string; // e.g. "SGR-SHA-0012"
   name: string;
@@ -29,6 +44,8 @@ export interface Slope {
   condition: SlopeCondition;
   imageUrl?: string;
   registeredDate: string;
+  coordinatesApprox?: boolean; // true when the source record had no coordinates
+  gis?: GeoportalRecord; // present for slopes imported from Geoportal MPS
 }
 
 export type ReportCategory =

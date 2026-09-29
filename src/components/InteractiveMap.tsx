@@ -515,7 +515,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
               <div className="flex items-center justify-between text-xs text-slate-500">
                 <span>Jenis: <strong className="text-slate-800 font-medium">{selectedSlope.slopeType}</strong></span>
                 <span>Tinggi: <strong className="text-slate-800 font-medium">{selectedSlope.height}m</strong></span>
-                <span>Kecerunan: <strong className="text-slate-800 font-medium">{selectedSlope.gradient}°</strong></span>
+                <span>Kecerunan: <strong className="text-slate-800 font-medium">{selectedSlope.gis ? `Kelas ${selectedSlope.gis.kelasKecerunan}` : `${selectedSlope.gradient}°`}</strong></span>
               </div>
 
               {/* Action Buttons */}

@@ -301,7 +301,7 @@ export const QRSignboardModal: React.FC<QRSignboardModalProps> = ({
                   <div>
                     <span className="text-[10px] text-slate-500 block uppercase font-semibold">Ketinggian / Sudut</span>
                     <span className="text-slate-200 font-semibold">
-                      {slope.height}m / {slope.gradient}°
+                      {slope.height}m / {slope.gis ? `Kelas ${slope.gis.kelasKecerunan}` : `${slope.gradient}°`}
                     </span>
                   </div>
                 </div>

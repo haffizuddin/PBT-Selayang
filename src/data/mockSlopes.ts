@@ -1,6 +1,8 @@
 import { Slope, SlopeReport } from '../types/slope';
+import { GEOPORTAL_SLOPES } from './geoportalSlopes';
 
 export const INITIAL_SLOPES: Slope[] = [
+  ...GEOPORTAL_SLOPES,
   {
     id: 'MPS-SEL-0012',
     name: 'Cerun Selayang Heights Fasa 1 (Persiaran Selayang)',

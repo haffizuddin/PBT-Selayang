@@ -57,7 +57,7 @@ export const SlopeDetailView: React.FC<SlopeDetailViewProps> = ({
               <span>/</span>
               <span>Cerun Selangor</span>
               <span>/</span>
-              <span className="font-mono font-bold text-slate-800">{slope.id}</span>
+              <span className="font-mono font-bold text-slate-800">{slope.gis?.idCerun ?? slope.id}</span>
             </div>
           </div>
 
@@ -119,7 +119,7 @@ export const SlopeDetailView: React.FC<SlopeDetailViewProps> = ({
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                   <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-mono tracking-tight">
-                    {slope.id}
+                    {slope.gis?.idCerun ?? slope.id}
                   </h1>
                   <span
                     className={`text-xs px-2.5 py-1 rounded-md font-bold ${
@@ -209,6 +209,43 @@ export const SlopeDetailView: React.FC<SlopeDetailViewProps> = ({
                 </div>
               </div>
 
+              {/* CARD: REKOD GEOPORTAL MPS (only for slopes imported from the geoportal) */}
+              {slope.gis && (
+                <div className="bg-white rounded-2xl shadow-xs border border-slate-200 p-5 sm:p-6">
+                  <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-amber-600" />
+                      <span>Rekod Geoportal MPS</span>
+                    </h3>
+                    <span className="text-xs font-mono text-slate-400">ID JMG: {slope.gis.idJmg}</span>
+                  </div>
+                  <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 text-xs">
+                    {([
+                      ['ID Cerun', slope.gis.idCerun],
+                      ['Nama Jalan', slope.gis.namaJalan],
+                      ['Tahap Bahaya', slope.gis.tahapBahaya],
+                      ['Tahap Risiko', slope.gis.tahapRisiko],
+                      ['Kelas Kecerunan', slope.gis.kelasKecerunan],
+                      ['Tinggi', `${slope.gis.tinggi} m`],
+                      ['Agensi Menyelenggara', slope.gis.agensi],
+                      ['Zon Ahli Majlis', slope.gis.zonAhliMajlis],
+                      ['Blok Perancangan', slope.gis.blokPerancangan],
+                      ['Blok Perancangan Kecil', slope.gis.blokPerancanganKecil],
+                    ] as [string, string][]).map(([label, value]) => (
+                      <div key={label} className="flex justify-between gap-3 py-2 border-b border-slate-100">
+                        <dt className="text-slate-500 shrink-0">{label}</dt>
+                        <dd className={`font-semibold text-right ${/SANGAT TINGGI/i.test(value) ? 'text-red-700' : /TINGGI/i.test(value) && label.startsWith('Tahap') ? 'text-amber-700' : 'text-slate-800'}`}>{value || '-'}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                  {slope.coordinatesApprox && (
+                    <p className="mt-3 text-[11px] text-slate-500">
+                      Koordinat pada peta ialah anggaran kawasan {slope.gis.blokPerancanganKecil}; lokasi tepat belum dimasukkan.
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* CARD: MAKLUMAT ASAS (Prompt Section 3) */}
               <div className="bg-white rounded-2xl shadow-xs border border-slate-200 p-5 sm:p-6">
                 <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
@@ -224,7 +261,7 @@ export const SlopeDetailView: React.FC<SlopeDetailViewProps> = ({
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
                   <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
                     <span className="text-slate-400 block text-[10px] uppercase font-semibold">ID Cerun</span>
-                    <span className="font-mono font-bold text-slate-900 text-sm">{slope.id}</span>
+                    <span className="font-mono font-bold text-slate-900 text-sm">{slope.gis?.idCerun ?? slope.id}</span>
                   </div>
 
                   <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
@@ -261,7 +298,7 @@ export const SlopeDetailView: React.FC<SlopeDetailViewProps> = ({
 
                   <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
                     <span className="text-slate-400 block text-[10px] uppercase font-semibold">Kecerunan</span>
-                    <span className="font-bold text-slate-900 text-sm">{slope.gradient}°</span>
+                    <span className="font-bold text-slate-900 text-sm">{slope.gis ? `Kelas ${slope.gis.kelasKecerunan}` : `${slope.gradient}°`}</span>
                   </div>
 
                   <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
@@ -426,7 +463,7 @@ export const SlopeDetailView: React.FC<SlopeDetailViewProps> = ({
                     </span>
                   </div>
                   <div className="bg-slate-950 text-white py-1 px-2 rounded mb-2 font-mono font-black text-sm tracking-wider">
-                    ID CERUN: {slope.id}
+                    ID CERUN: {slope.gis?.idCerun ?? slope.id}
                   </div>
 
                   {qrDataUrl && (
