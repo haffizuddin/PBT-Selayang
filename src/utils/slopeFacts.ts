@@ -23,4 +23,29 @@ export function slopeKeyFacts(slope: Slope): [string, string][] {
   ];
 }
 
+// Everything else on record: the geoportal fields, or the inspection condition for demo slopes
+export function slopeFullDetails(slope: Slope): [string, string][] {
+  if (slope.gis) {
+    const g = slope.gis;
+    return [
+      ['ID JMG', g.idJmg],
+      ['Nama jalan', g.namaJalan],
+      ['Zon ahli majlis', g.zonAhliMajlis],
+      ['Blok perancangan', g.blokPerancangan],
+      ['Blok perancangan kecil', g.blokPerancanganKecil],
+    ];
+  }
+  const c = slope.condition;
+  return [
+    ['Kestabilan', c.stability],
+    ['Saliran', c.drainage],
+    ['Hakisan permukaan', c.surfaceErosion],
+    ['Retakan', c.cracks],
+    ['Tumbuhan', c.vegetation],
+    ['Pergerakan tanah', c.groundMovement],
+    ['Struktur', c.structureType],
+    ['Catatan', c.notes],
+  ];
+}
+
 export const isSevere = (value: string) => /SANGAT TINGGI|Kritikal/i.test(value);

@@ -187,7 +187,6 @@ export default function App() {
             slopes={slopes}
             selectedSlope={selectedSlope}
             onSelectSlope={handleSelectSlope}
-            onViewSlopeDetail={handleViewSlopeDetail}
             onReportSlope={handleStartReport}
             onViewQRSignboard={handleOpenSignboard}
           />

@@ -2,13 +2,12 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import L from 'leaflet';
 import { Slope, SlopeStatus } from '../types/slope';
 import { Search, Navigation, X, Maximize } from 'lucide-react';
-import { slopeKeyFacts, isSevere } from '../utils/slopeFacts';
+import { slopeKeyFacts, slopeFullDetails, isSevere } from '../utils/slopeFacts';
 
 interface InteractiveMapProps {
   slopes: Slope[];
   selectedSlope: Slope | null;
   onSelectSlope: (slope: Slope | null) => void;
-  onViewSlopeDetail: (slope: Slope) => void;
   onReportSlope: (slope: Slope) => void;
   onViewQRSignboard: (slope: Slope) => void;
 }
@@ -44,6 +43,9 @@ function popupHtml(slope: Slope): string {
         `<div><dt>${escapeHtml(label)}</dt><dd${isSevere(value) ? ' class="is-severe"' : ''}>${escapeHtml(value || '-')}</dd></div>`
     )
     .join('');
+  const more = slopeFullDetails(slope)
+    .map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value || '-')}</dd></div>`)
+    .join('');
   return `
     <div class="slope-popup">
       <div class="slope-popup__top">
@@ -52,9 +54,10 @@ function popupHtml(slope: Slope): string {
       </div>
       <div class="slope-popup__place">${escapeHtml(slope.location)}</div>
       <dl class="slope-popup__facts">${facts}</dl>
-      <button data-action="report" class="slope-popup__btn slope-popup__btn--red">Lapor masalah cerun</button>
+      <dl class="slope-popup__more">${more}</dl>
+      ${slope.coordinatesApprox ? '<p class="slope-popup__note">Lokasi pada peta ialah anggaran.</p>' : ''}
       <div class="slope-popup__row">
-        <button data-action="detail" class="slope-popup__btn slope-popup__btn--light">Halaman penuh</button>
+        <button data-action="report" class="slope-popup__btn slope-popup__btn--red">Lapor masalah</button>
         <button data-action="qr" class="slope-popup__btn slope-popup__btn--light">Kod QR</button>
       </div>
     </div>`;
@@ -63,7 +66,6 @@ function popupHtml(slope: Slope): string {
 export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   slopes,
   onSelectSlope,
-  onViewSlopeDetail,
   onReportSlope,
   onViewQRSignboard,
 }) => {
@@ -75,10 +77,11 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<SlopeStatus | 'Semua'>('Semua');
   const [userLocationActive, setUserLocationActive] = useState(false);
+  const [popupOpen, setPopupOpen] = useState(false);
 
   // Keep latest callbacks for the popup buttons without rebuilding markers
-  const handlersRef = useRef({ onSelectSlope, onViewSlopeDetail, onReportSlope, onViewQRSignboard });
-  handlersRef.current = { onSelectSlope, onViewSlopeDetail, onReportSlope, onViewQRSignboard };
+  const handlersRef = useRef({ onSelectSlope, onReportSlope, onViewQRSignboard });
+  handlersRef.current = { onSelectSlope, onReportSlope, onViewQRSignboard };
 
   const filteredSlopes = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -121,6 +124,8 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     }).addTo(map);
     L.control.zoom({ position: 'bottomright' }).addTo(map);
     markersLayerRef.current = L.layerGroup().addTo(map);
+    map.on('popupopen', () => setPopupOpen(true));
+    map.on('popupclose', () => setPopupOpen(false));
     mapInstanceRef.current = map;
     fitAll(slopes, false);
 
@@ -152,11 +157,10 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
       });
 
       const marker = L.marker([lat, lng], { icon, title: slope.gis?.idCerun ?? slope.id });
-      marker.bindPopup(popupHtml(slope), { maxWidth: 290, minWidth: 260, className: 'slope-popup-wrap', autoPanPaddingTopLeft: [16, 150], autoPanPaddingBottomRight: [16, 80] });
+      marker.bindPopup(popupHtml(slope), { maxWidth: 300, minWidth: 270, maxHeight: Math.min(560, window.innerHeight - 170), className: 'slope-popup-wrap', autoPanPaddingTopLeft: [16, 150], autoPanPaddingBottomRight: [16, 80] });
       marker.on('click', () => handlersRef.current.onSelectSlope(slope));
       marker.on('popupopen', (e) => {
         const el = (e as L.PopupEvent).popup.getElement();
-        el?.querySelector('[data-action="detail"]')?.addEventListener('click', () => handlersRef.current.onViewSlopeDetail(slope));
         el?.querySelector('[data-action="report"]')?.addEventListener('click', () => handlersRef.current.onReportSlope(slope));
         el?.querySelector('[data-action="qr"]')?.addEventListener('click', () => handlersRef.current.onViewQRSignboard(slope));
       });
@@ -229,7 +233,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
           <Maximize className="w-4 h-4" />
         </MapButton>
       </div>
-      <div className="absolute bottom-24 right-3 z-[500] md:hidden">
+      <div className={`absolute bottom-24 right-3 z-[500] md:hidden ${popupOpen ? 'hidden' : ''}`}>
         <MapButton onClick={handleLocateMe} active={userLocationActive} label="Lokasi saya">
           <Navigation className="w-4 h-4" />
         </MapButton>

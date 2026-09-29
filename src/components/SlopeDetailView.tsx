@@ -3,7 +3,7 @@ import L from 'leaflet';
 import { Slope } from '../types/slope';
 import { generateSlopeQRDataUrl, getSlopePermanentUrl } from '../utils/qrHelper';
 import { STATUS_COLORS, safeRemove } from './InteractiveMap';
-import { slopeKeyFacts, isSevere } from '../utils/slopeFacts';
+import { slopeKeyFacts, slopeFullDetails, isSevere } from '../utils/slopeFacts';
 import { ArrowLeft, AlertTriangle, Printer, Link2, Check, Phone, ChevronDown } from 'lucide-react';
 
 interface SlopeDetailViewProps {
@@ -98,25 +98,7 @@ export const SlopeDetailView: React.FC<SlopeDetailViewProps> = ({ slope, onBackT
 
   const keyFacts = slopeKeyFacts(slope);
 
-  const fullDetails: [string, string][] = slope.gis
-    ? [
-        ['ID cerun', slope.gis.idCerun],
-        ['ID JMG', slope.gis.idJmg],
-        ['Nama jalan', slope.gis.namaJalan],
-        ['Zon ahli majlis', slope.gis.zonAhliMajlis],
-        ['Blok perancangan', slope.gis.blokPerancangan],
-        ['Blok perancangan kecil', slope.gis.blokPerancanganKecil],
-      ]
-    : [
-        ['Kestabilan', slope.condition.stability],
-        ['Saliran', slope.condition.drainage],
-        ['Hakisan permukaan', slope.condition.surfaceErosion],
-        ['Retakan', slope.condition.cracks],
-        ['Tumbuhan', slope.condition.vegetation],
-        ['Pergerakan tanah', slope.condition.groundMovement],
-        ['Struktur', slope.condition.structureType],
-        ['Catatan', slope.condition.notes],
-      ];
+  const fullDetails = slopeFullDetails(slope);
 
   return (
     <div className="bg-slate-100 pb-12">

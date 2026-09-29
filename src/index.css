@@ -69,7 +69,13 @@
 .slope-popup__facts dt { font-size: 10.5px; color: #64748b; }
 .slope-popup__facts dd { margin: 0; font-weight: 600; font-size: 12.5px; }
 .slope-popup__facts dd.is-severe { color: #b91c1c; }
-.slope-popup__row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
+.slope-popup__more { margin: 0 0 10px; font-size: 12px; }
+.slope-popup__more div { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; border-bottom: 1px solid #f1f5f9; }
+.slope-popup__more div:last-child { border-bottom: 0; }
+.slope-popup__more dt { color: #64748b; flex-shrink: 0; }
+.slope-popup__more dd { margin: 0; text-align: right; color: #0f172a; }
+.slope-popup__note { margin: -4px 0 10px; font-size: 11px; color: #64748b; }
+.slope-popup__row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .slope-popup__btn { width: 100%; border-radius: 8px; padding: 8px 6px; font-size: 12.5px; font-weight: 600; cursor: pointer; }
 .slope-popup__btn--red { background: #dc2626; color: #fff; }
 .slope-popup__btn--red:hover { background: #b91c1c; }
