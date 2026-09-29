@@ -28,3 +28,11 @@ export function getSlopePermanentUrl(slopeId: string): string {
   }
   return `https://demo-pbt.my/cerun/${slopeId}`;
 }
+
+// Reads a slope ID out of scanned QR text: a full /cerun/<ID> URL or a bare ID
+export function extractSlopeId(text: string): string | null {
+  const fromUrl = text.match(/\/cerun\/([A-Za-z0-9-]+)/);
+  if (fromUrl) return fromUrl[1];
+  const bare = text.trim().match(/^[A-Z]{2,5}-[A-Z]{2,5}-\d{3,5}$/i);
+  return bare ? bare[0] : null;
+}

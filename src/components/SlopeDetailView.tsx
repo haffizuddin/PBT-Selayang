@@ -185,12 +185,12 @@ export const SlopeDetailView: React.FC<SlopeDetailViewProps> = ({
               <div className="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
                 <div className="relative h-64 sm:h-72 w-full bg-slate-900">
                   <img
-                    src={slope.imageUrl || '/src/assets/images/slope_site_inspection_1790577385302.jpg'}
+                    src={slope.imageUrl || '/images/slope_site_inspection_1790577385302.jpg'}
                     alt={`Foto Cerun ${slope.id}`}
                     referrerPolicy="no-referrer"
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/src/assets/images/slope_site_inspection_1790577385302.jpg';
+                      (e.target as HTMLImageElement).src = '/images/slope_site_inspection_1790577385302.jpg';
                     }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent flex items-end p-4">

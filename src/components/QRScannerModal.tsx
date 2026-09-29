@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Slope } from '../types/slope';
-import { generateSlopeQRDataUrl, getSlopePermanentUrl } from '../utils/qrHelper';
+import jsQR from 'jsqr';
+import { generateSlopeQRDataUrl, getSlopePermanentUrl, extractSlopeId } from '../utils/qrHelper';
 import { 
   QrCode, X, Camera, ArrowRight, Smartphone, Sparkles, MapPin, 
   CheckCircle2, RefreshCw, Zap, ExternalLink, ShieldAlert, ChevronRight 
@@ -79,9 +80,7 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
           video: { facingMode: 'environment' }
         });
         streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
+        // <video> only mounts after this state change; the effect below attaches the stream
         setUseRealCamera(true);
       } else {
         setCameraError('Kamera tidak disokong pada pelayar ini.');
@@ -91,6 +90,48 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
       setUseRealCamera(false);
     }
   };
+
+  // Attach camera stream and decode real QR codes frame by frame
+  useEffect(() => {
+    if (!useRealCamera || !videoRef.current || !streamRef.current) return;
+    const video = videoRef.current;
+    video.srcObject = streamRef.current;
+    video.play().catch(() => {});
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    let raf = 0;
+    let stopped = false;
+
+    const tick = () => {
+      if (stopped) return;
+      if (ctx && video.readyState >= video.HAVE_CURRENT_DATA && video.videoWidth) {
+        const scale = Math.min(1, 640 / video.videoWidth);
+        canvas.width = Math.round(video.videoWidth * scale);
+        canvas.height = Math.round(video.videoHeight * scale);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+        if (code?.data) {
+          const slopeId = extractSlopeId(code.data);
+          const match = slopeId && slopes.find((s) => s.id.toLowerCase() === slopeId.toLowerCase());
+          if (match) {
+            stopped = true;
+            setCameraError(null);
+            handleTriggerScan(match);
+            return;
+          }
+          setCameraError(`Kod QR dikesan tetapi bukan plat cerun MPS: ${code.data.slice(0, 60)}`);
+        }
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => {
+      stopped = true;
+      cancelAnimationFrame(raf);
+    };
+  }, [useRealCamera, slopes]);
 
   // Trigger scan action
   const handleTriggerScan = (targetSlope?: Slope) => {

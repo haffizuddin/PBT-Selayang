@@ -51,12 +51,13 @@ export default function App() {
   }, [slopes]);
 
   // Navigate handler with browser history state
-  const handleNavigate = (view: ViewMode) => {
+  // `slope` overrides selectedSlope when the caller has just set it (state isn't updated yet)
+  const handleNavigate = (view: ViewMode, slope: Slope | null = selectedSlope) => {
     setCurrentView(view);
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    if (view === 'slope-detail' && selectedSlope) {
-      window.history.pushState({}, '', `/cerun/${selectedSlope.id}`);
+    if (view === 'slope-detail' && slope) {
+      window.history.pushState({}, '', `/cerun/${slope.id}`);
     } else if (view === 'map') {
       window.history.pushState({}, '', '/');
     }
@@ -70,7 +71,7 @@ export default function App() {
   // View slope details page
   const handleViewSlopeDetail = (slope: Slope) => {
     setSelectedSlope(slope);
-    handleNavigate('slope-detail');
+    handleNavigate('slope-detail', slope);
   };
 
   // Start reporting issue for a slope
@@ -148,7 +149,7 @@ export default function App() {
   const handleTriggerDemoScenario = () => {
     const demoSlope = slopes.find((s) => s.id === 'MPS-SEL-0012') || slopes[0];
     setSelectedSlope(demoSlope);
-    handleNavigate('slope-detail');
+    handleNavigate('slope-detail', demoSlope);
   };
 
   // Jump to specific step in the demo sequence
@@ -161,7 +162,7 @@ export default function App() {
         handleNavigate('map');
         break;
       case 2:
-        handleNavigate('slope-detail');
+        handleNavigate('slope-detail', demoSlope);
         break;
       case 3:
         handleNavigate('report-issue');
@@ -251,7 +252,7 @@ export default function App() {
               const matched = slopes.find((s) => s.id === slopeId);
               if (matched) {
                 setSelectedSlope(matched);
-                handleNavigate('slope-detail');
+                handleNavigate('slope-detail', matched);
               }
             }}
             onBackToMap={() => handleNavigate('map')}
@@ -309,7 +310,7 @@ export default function App() {
           onScanComplete={(scannedSlope) => {
             setShowQRScanner(false);
             setSelectedSlope(scannedSlope);
-            handleNavigate('slope-detail');
+            handleNavigate('slope-detail', scannedSlope);
           }}
         />
       )}

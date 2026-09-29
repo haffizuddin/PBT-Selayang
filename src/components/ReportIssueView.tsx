@@ -23,7 +23,7 @@ export const ReportIssueView: React.FC<ReportIssueViewProps> = ({
     'Longkang di bahagian bawah cerun dipenuhi daun dan air mula bertakung.'
   );
   const [photos, setPhotos] = useState<string[]>([
-    '/src/assets/images/slope_drainage_issue_1790577399566.jpg'
+    '/images/slope_drainage_issue_1790577399566.jpg'
   ]);
   const [name, setName] = useState('Ahmad Farhan');
   const [phone, setPhone] = useState('012-3849102');
@@ -322,7 +322,7 @@ export const ReportIssueView: React.FC<ReportIssueViewProps> = ({
                   <span className="text-[11px] text-slate-500 font-medium">Foto Contoh Ujian Demo:</span>
                   <button
                     type="button"
-                    onClick={() => addSamplePhoto('/src/assets/images/slope_drainage_issue_1790577399566.jpg')}
+                    onClick={() => addSamplePhoto('/images/slope_drainage_issue_1790577399566.jpg')}
                     className="px-2.5 py-1 bg-white hover:bg-amber-50 text-slate-700 border border-slate-200 rounded-lg text-[11px] font-semibold flex items-center gap-1 shadow-2xs"
                   >
                     <ImageIcon className="w-3 h-3 text-amber-600" />
@@ -330,7 +330,7 @@ export const ReportIssueView: React.FC<ReportIssueViewProps> = ({
                   </button>
                   <button
                     type="button"
-                    onClick={() => addSamplePhoto('/src/assets/images/slope_site_inspection_1790577385302.jpg')}
+                    onClick={() => addSamplePhoto('/images/slope_site_inspection_1790577385302.jpg')}
                     className="px-2.5 py-1 bg-white hover:bg-amber-50 text-slate-700 border border-slate-200 rounded-lg text-[11px] font-semibold flex items-center gap-1 shadow-2xs"
                   >
                     <ImageIcon className="w-3 h-3 text-blue-600" />
