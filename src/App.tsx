@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { Slope, SlopeReport, ViewMode, ReportStatus } from './types/slope';
 import { INITIAL_SLOPES, INITIAL_REPORTS } from './data/mockSlopes';
 import { Header } from './components/Header';
+import { DemoGuide } from './components/DemoGuide';
 import { Footer } from './components/Footer';
 import { InteractiveMap } from './components/InteractiveMap';
 import { SlopeDetailView } from './components/SlopeDetailView';
@@ -144,7 +145,7 @@ export default function App() {
     );
   };
 
-  // Header steps: the demo walkthrough is also the main navigation
+  // Demo guide steps: the walkthrough is also the main navigation
   const handleJumpToStep = (stepNumber: number) => {
     const slope = selectedSlope || slopes.find((s) => s.id === 'MPS-SEL-0012') || slopes[0];
     setSelectedSlope(slope);
@@ -174,8 +175,7 @@ export default function App() {
     <div className="min-h-screen flex flex-col bg-slate-100 font-sans selection:bg-amber-200 selection:text-amber-950">
       {/* Malaysian Government / PBT Navigation Header */}
       <Header
-        currentView={currentView}
-        onJumpToStep={handleJumpToStep}
+        onGoHome={() => handleJumpToStep(1)}
         onOpenQRScanner={() => setShowQRScanner(true)}
         onOpenEmergencyModal={() => setShowEmergencyModal(true)}
       />
@@ -268,6 +268,9 @@ export default function App() {
         )}
       </main>
 
+
+      {/* Floating demo walkthrough — the app's main navigation */}
+      <DemoGuide currentView={currentView} onJumpToStep={handleJumpToStep} />
 
       {/* The map fills the screen, so no footer there */}
       {currentView !== 'map' && <Footer onOpenEmergencyModal={() => setShowEmergencyModal(true)} />}

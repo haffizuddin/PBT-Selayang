@@ -3,6 +3,7 @@ import L from 'leaflet';
 import { Slope } from '../types/slope';
 import { generateSlopeQRDataUrl, getSlopePermanentUrl } from '../utils/qrHelper';
 import { STATUS_COLORS, safeRemove } from './InteractiveMap';
+import { slopeKeyFacts, isSevere } from '../utils/slopeFacts';
 import { ArrowLeft, AlertTriangle, Printer, Link2, Check, Phone, ChevronDown } from 'lucide-react';
 
 interface SlopeDetailViewProps {
@@ -95,24 +96,7 @@ export const SlopeDetailView: React.FC<SlopeDetailViewProps> = ({ slope, onBackT
     });
   };
 
-  // The handful of facts a member of the public actually needs
-  const keyFacts: [string, string][] = slope.gis
-    ? [
-        ['Tahap risiko', slope.gis.tahapRisiko],
-        ['Tahap bahaya', slope.gis.tahapBahaya],
-        ['Tinggi', `${slope.gis.tinggi} m`],
-        ['Kelas kecerunan', slope.gis.kelasKecerunan],
-        ['Diselenggara oleh', slope.gis.agensi],
-        ['Kawasan', slope.gis.blokPerancanganKecil.split(':')[1]?.trim() || slope.gis.blokPerancanganKecil],
-      ]
-    : [
-        ['Tahap risiko', slope.riskLevel],
-        ['Tinggi', `${slope.height} m`],
-        ['Kecerunan', `${slope.gradient}°`],
-        ['Jenis', slope.slopeType],
-        ['Pemeriksaan terakhir', slope.lastInspection],
-        ['Pemeriksaan seterusnya', slope.nextInspection],
-      ];
+  const keyFacts = slopeKeyFacts(slope);
 
   const fullDetails: [string, string][] = slope.gis
     ? [
@@ -174,7 +158,7 @@ export const SlopeDetailView: React.FC<SlopeDetailViewProps> = ({ slope, onBackT
                 {keyFacts.map(([label, value]) => (
                   <div key={label} className="rounded-xl bg-slate-50 px-3 py-2.5">
                     <dt className="text-[11px] text-slate-500">{label}</dt>
-                    <dd className={`text-sm font-semibold ${/SANGAT TINGGI|Kritikal/i.test(value) ? 'text-red-700' : 'text-slate-900'}`}>{value || '-'}</dd>
+                    <dd className={`text-sm font-semibold ${isSevere(value) ? 'text-red-700' : 'text-slate-900'}`}>{value || '-'}</dd>
                   </div>
                 ))}
               </dl>

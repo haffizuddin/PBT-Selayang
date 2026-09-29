@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import L from 'leaflet';
 import { Slope, SlopeStatus } from '../types/slope';
 import { Search, Navigation, X, Maximize } from 'lucide-react';
+import { slopeKeyFacts, isSevere } from '../utils/slopeFacts';
 
 interface InteractiveMapProps {
   slopes: Slope[];
@@ -33,10 +34,16 @@ const MPS_CENTRE: [number, number] = [3.255, 101.665];
 const escapeHtml = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 
-// Small, plain popup: who/where, how risky, two actions
+// Clicking a pin shows everything the public needs right there: facts + actions, no photo
 function popupHtml(slope: Slope): string {
   const color = STATUS_COLORS[slope.status];
   const displayId = slope.gis?.idCerun ?? slope.id;
+  const facts = slopeKeyFacts(slope)
+    .map(
+      ([label, value]) =>
+        `<div><dt>${escapeHtml(label)}</dt><dd${isSevere(value) ? ' class="is-severe"' : ''}>${escapeHtml(value || '-')}</dd></div>`
+    )
+    .join('');
   return `
     <div class="slope-popup">
       <div class="slope-popup__top">
@@ -44,13 +51,11 @@ function popupHtml(slope: Slope): string {
         <span class="slope-popup__pill" style="background:${color}1f;color:${color};border-color:${color}66">${escapeHtml(slope.status)}</span>
       </div>
       <div class="slope-popup__place">${escapeHtml(slope.location)}</div>
-      <div class="slope-popup__facts">
-        <span>Tinggi <b>${slope.height} m</b></span>
-        ${slope.gis ? `<span>Tahap bahaya <b>${escapeHtml(slope.gis.tahapBahaya)}</b></span>` : `<span>Pemeriksaan <b>${escapeHtml(slope.lastInspection)}</b></span>`}
-      </div>
-      <div class="slope-popup__actions">
-        <button data-action="detail" class="slope-popup__btn slope-popup__btn--dark">Lihat butiran</button>
-        <button data-action="report" class="slope-popup__btn slope-popup__btn--red">Lapor masalah</button>
+      <dl class="slope-popup__facts">${facts}</dl>
+      <button data-action="report" class="slope-popup__btn slope-popup__btn--red">Lapor masalah cerun</button>
+      <div class="slope-popup__row">
+        <button data-action="detail" class="slope-popup__btn slope-popup__btn--light">Halaman penuh</button>
+        <button data-action="qr" class="slope-popup__btn slope-popup__btn--light">Kod QR</button>
       </div>
     </div>`;
 }
@@ -60,6 +65,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   onSelectSlope,
   onViewSlopeDetail,
   onReportSlope,
+  onViewQRSignboard,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -71,8 +77,8 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   const [userLocationActive, setUserLocationActive] = useState(false);
 
   // Keep latest callbacks for the popup buttons without rebuilding markers
-  const handlersRef = useRef({ onSelectSlope, onViewSlopeDetail, onReportSlope });
-  handlersRef.current = { onSelectSlope, onViewSlopeDetail, onReportSlope };
+  const handlersRef = useRef({ onSelectSlope, onViewSlopeDetail, onReportSlope, onViewQRSignboard });
+  handlersRef.current = { onSelectSlope, onViewSlopeDetail, onReportSlope, onViewQRSignboard };
 
   const filteredSlopes = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -146,12 +152,13 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
       });
 
       const marker = L.marker([lat, lng], { icon, title: slope.gis?.idCerun ?? slope.id });
-      marker.bindPopup(popupHtml(slope), { maxWidth: 260, minWidth: 220, className: 'slope-popup-wrap', autoPanPadding: [20, 80] });
+      marker.bindPopup(popupHtml(slope), { maxWidth: 290, minWidth: 260, className: 'slope-popup-wrap', autoPanPaddingTopLeft: [16, 150], autoPanPaddingBottomRight: [16, 80] });
       marker.on('click', () => handlersRef.current.onSelectSlope(slope));
       marker.on('popupopen', (e) => {
         const el = (e as L.PopupEvent).popup.getElement();
         el?.querySelector('[data-action="detail"]')?.addEventListener('click', () => handlersRef.current.onViewSlopeDetail(slope));
         el?.querySelector('[data-action="report"]')?.addEventListener('click', () => handlersRef.current.onReportSlope(slope));
+        el?.querySelector('[data-action="qr"]')?.addEventListener('click', () => handlersRef.current.onViewQRSignboard(slope));
       });
       marker.addTo(layer);
     });
@@ -177,9 +184,9 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   };
 
   return (
-    <div className="relative isolate w-full h-[calc(100dvh-6.25rem)] lg:h-[calc(100dvh-3.5rem)] overflow-hidden bg-slate-100">
+    <div className="relative isolate w-full h-[calc(100dvh-3.5rem)] overflow-hidden bg-slate-100">
       {/* Search + status chips (the chips double as the colour legend) */}
-      <div className="absolute top-3 left-3 right-3 md:right-auto md:w-[440px] z-[500] space-y-2">
+      <div className="absolute top-3 left-3 right-3 md:right-auto md:w-[500px] z-[500] space-y-2">
         <label className="bg-white rounded-xl shadow-md border border-slate-200 px-3 py-2 flex items-center gap-2">
           <Search className="w-4 h-4 text-slate-400 shrink-0" />
           <input
@@ -195,7 +202,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
             </button>
           )}
         </label>
-        <div className="flex gap-1.5 overflow-x-auto pb-1">
+        <div className="flex flex-wrap md:flex-nowrap md:w-max gap-1.5">
           {(['Semua', ...STATUSES] as const).map((st) => {
             const active = selectedStatus === st;
             return (
