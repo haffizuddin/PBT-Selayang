@@ -10,12 +10,12 @@ interface HeaderProps {
 // Navigation lives in the floating demo guide; the header only carries the two actions
 export const Header: React.FC<HeaderProps> = ({ onGoHome, onOpenQRScanner, onOpenEmergencyModal }) => (
   <header className="sticky top-0 z-50 bg-slate-900 text-white shadow-md">
-    <div className="max-w-7xl mx-auto px-4 h-14 flex items-center gap-4">
+    <div className="max-w-7xl mx-auto px-4 h-14 flex items-center gap-3">
       <button onClick={onGoHome} className="flex items-center gap-2.5 shrink-0" title="Kembali ke peta">
         <span className="w-9 h-9 rounded-lg bg-amber-400 text-slate-950 grid place-items-center font-black text-xs">MPS</span>
         <span className="text-left leading-tight">
           <span className="block font-bold text-sm">Cerun MPS</span>
-          <span className="block text-[11px] text-slate-400">Majlis Perbandaran Selayang</span>
+          <span className="block text-[11px] text-slate-400 max-[389px]:hidden">Majlis Perbandaran Selayang</span>
         </span>
       </button>
 
