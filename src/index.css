@@ -48,6 +48,7 @@
   box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
   cursor: pointer;
 }
+.slope-pin--chosen { outline: 3px solid #0f172a; outline-offset: 2px; transform: scale(1.2); }
 .slope-pin--urgent { animation: pin-pulse 2s infinite; }
 @keyframes pin-pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgb(239 68 68 / 0.55), 0 1px 4px rgb(0 0 0 / 0.35); }
@@ -58,30 +59,6 @@
   background: #2563eb; border: 3px solid #fff; box-shadow: 0 0 0 6px rgb(37 99 235 / 0.25);
 }
 
-/* Map popup: the whole slope summary, compact */
-.slope-popup { padding: 12px 14px 14px; font-size: 13px; color: #0f172a; }
-.slope-popup__top { display: flex; align-items: center; gap: 8px; padding-right: 16px; }
-.slope-popup__top strong { font-size: 16px; font-family: 'JetBrains Mono', ui-monospace, monospace; }
-.slope-popup__pill { font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 9999px; border: 1px solid; white-space: nowrap; }
-.slope-popup__place { margin-top: 2px; color: #475569; }
-.slope-popup__facts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 10px 0 12px; }
-.slope-popup__facts div { background: #f8fafc; border-radius: 8px; padding: 5px 8px; }
-.slope-popup__facts dt { font-size: 10.5px; color: #64748b; }
-.slope-popup__facts dd { margin: 0; font-weight: 600; font-size: 12.5px; }
-.slope-popup__facts dd.is-severe { color: #b91c1c; }
-.slope-popup__more { margin: 0 0 10px; font-size: 12px; }
-.slope-popup__more div { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; border-bottom: 1px solid #f1f5f9; }
-.slope-popup__more div:last-child { border-bottom: 0; }
-.slope-popup__more dt { color: #64748b; flex-shrink: 0; }
-.slope-popup__more dd { margin: 0; text-align: right; color: #0f172a; }
-.slope-popup__note { margin: -4px 0 10px; font-size: 11px; color: #64748b; }
-.slope-popup__row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.slope-popup__btn { width: 100%; border-radius: 8px; padding: 8px 6px; font-size: 12.5px; font-weight: 600; cursor: pointer; }
-.slope-popup__btn--red { background: #dc2626; color: #fff; }
-.slope-popup__btn--red:hover { background: #b91c1c; }
-.slope-popup__btn--light { background: #f1f5f9; color: #0f172a; }
-.slope-popup__btn--light:hover { background: #e2e8f0; }
-.leaflet-container a.leaflet-popup-close-button { top: 6px; right: 6px; }
 
 /* Print styling for QR Signboard */
 @media print {

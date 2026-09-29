@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import L from 'leaflet';
 import { Slope, SlopeStatus } from '../types/slope';
 import { Search, Navigation, X, Maximize } from 'lucide-react';
-import { slopeKeyFacts, slopeFullDetails, isSevere } from '../utils/slopeFacts';
+import { SlopeQuickView } from './SlopeQuickView';
 
 interface InteractiveMapProps {
   slopes: Slope[];
@@ -30,39 +30,6 @@ export function safeRemove(map: L.Map) {
 const STATUSES: SlopeStatus[] = ['Risiko Tinggi', 'Perhatian', 'Pemantauan', 'Normal'];
 const MPS_CENTRE: [number, number] = [3.255, 101.665];
 
-const escapeHtml = (s: string) =>
-  s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
-
-// Clicking a pin shows everything the public needs right there: facts + actions, no photo
-function popupHtml(slope: Slope): string {
-  const color = STATUS_COLORS[slope.status];
-  const displayId = slope.gis?.idCerun ?? slope.id;
-  const facts = slopeKeyFacts(slope)
-    .map(
-      ([label, value]) =>
-        `<div><dt>${escapeHtml(label)}</dt><dd${isSevere(value) ? ' class="is-severe"' : ''}>${escapeHtml(value || '-')}</dd></div>`
-    )
-    .join('');
-  const more = slopeFullDetails(slope)
-    .map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value || '-')}</dd></div>`)
-    .join('');
-  return `
-    <div class="slope-popup">
-      <div class="slope-popup__top">
-        <strong>${escapeHtml(displayId)}</strong>
-        <span class="slope-popup__pill" style="background:${color}1f;color:${color};border-color:${color}66">${escapeHtml(slope.status)}</span>
-      </div>
-      <div class="slope-popup__place">${escapeHtml(slope.location)}</div>
-      <dl class="slope-popup__facts">${facts}</dl>
-      <dl class="slope-popup__more">${more}</dl>
-      ${slope.coordinatesApprox ? '<p class="slope-popup__note">Lokasi pada peta ialah anggaran.</p>' : ''}
-      <div class="slope-popup__row">
-        <button data-action="report" class="slope-popup__btn slope-popup__btn--red">Lapor masalah</button>
-        <button data-action="qr" class="slope-popup__btn slope-popup__btn--light">Kod QR</button>
-      </div>
-    </div>`;
-}
-
 export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   slopes,
   onSelectSlope,
@@ -77,9 +44,9 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<SlopeStatus | 'Semua'>('Semua');
   const [userLocationActive, setUserLocationActive] = useState(false);
-  const [popupOpen, setPopupOpen] = useState(false);
+  const [quickSlope, setQuickSlope] = useState<Slope | null>(null);
 
-  // Keep latest callbacks for the popup buttons without rebuilding markers
+  // Keep latest callbacks for marker clicks without rebuilding markers
   const handlersRef = useRef({ onSelectSlope, onReportSlope, onViewQRSignboard });
   handlersRef.current = { onSelectSlope, onReportSlope, onViewQRSignboard };
 
@@ -124,8 +91,6 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     }).addTo(map);
     L.control.zoom({ position: 'bottomright' }).addTo(map);
     markersLayerRef.current = L.layerGroup().addTo(map);
-    map.on('popupopen', () => setPopupOpen(true));
-    map.on('popupclose', () => setPopupOpen(false));
     mapInstanceRef.current = map;
     fitAll(slopes, false);
 
@@ -148,8 +113,9 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
       const color = STATUS_COLORS[slope.status];
       const urgent = slope.status === 'Risiko Tinggi';
+      const chosen = quickSlope?.id === slope.id;
       const icon = L.divIcon({
-        html: `<span class="slope-pin${urgent ? ' slope-pin--urgent' : ''}" style="--pin:${color}">${urgent ? '!' : ''}</span>`,
+        html: `<span class="slope-pin${urgent ? ' slope-pin--urgent' : ''}${chosen ? ' slope-pin--chosen' : ''}" style="--pin:${color}">${urgent ? '!' : ''}</span>`,
         className: 'slope-pin-wrap',
         iconSize: [26, 26],
         iconAnchor: [13, 13],
@@ -157,16 +123,13 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
       });
 
       const marker = L.marker([lat, lng], { icon, title: slope.gis?.idCerun ?? slope.id });
-      marker.bindPopup(popupHtml(slope), { maxWidth: 300, minWidth: 270, maxHeight: Math.min(560, window.innerHeight - 170), className: 'slope-popup-wrap', autoPanPaddingTopLeft: [16, 150], autoPanPaddingBottomRight: [16, 80] });
-      marker.on('click', () => handlersRef.current.onSelectSlope(slope));
-      marker.on('popupopen', (e) => {
-        const el = (e as L.PopupEvent).popup.getElement();
-        el?.querySelector('[data-action="report"]')?.addEventListener('click', () => handlersRef.current.onReportSlope(slope));
-        el?.querySelector('[data-action="qr"]')?.addEventListener('click', () => handlersRef.current.onViewQRSignboard(slope));
+      marker.on('click', () => {
+        handlersRef.current.onSelectSlope(slope);
+        setQuickSlope(slope);
       });
       marker.addTo(layer);
     });
-  }, [filteredSlopes]);
+  }, [filteredSlopes, quickSlope]);
 
   const handleLocateMe = () => {
     const place = (coords: [number, number]) => {
@@ -233,7 +196,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
           <Maximize className="w-4 h-4" />
         </MapButton>
       </div>
-      <div className={`absolute bottom-24 right-3 z-[500] md:hidden ${popupOpen ? 'hidden' : ''}`}>
+      <div className="absolute bottom-24 right-3 z-[500] md:hidden">
         <MapButton onClick={handleLocateMe} active={userLocationActive} label="Lokasi saya">
           <Navigation className="w-4 h-4" />
         </MapButton>
@@ -246,6 +209,21 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
       )}
 
       <div ref={mapContainerRef} className="w-full h-full" />
+
+      {quickSlope && (
+        <SlopeQuickView
+          slope={quickSlope}
+          onClose={() => setQuickSlope(null)}
+          onReport={(s) => {
+            setQuickSlope(null);
+            onReportSlope(s);
+          }}
+          onShowQR={(s) => {
+            setQuickSlope(null);
+            onViewQRSignboard(s);
+          }}
+        />
+      )}
     </div>
   );
 };
