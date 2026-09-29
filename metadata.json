@@ -1,0 +1,6 @@
+{
+  "name": "Sistem Informasi & Aduan Cerun (SIAC) MPS",
+  "description": "Sistem Informasi & Aduan Cerun Majlis Perbandaran Selayang (MPS) - Pemantauan Cerun Berdaftar, Plat QR Fizikal, dan Saluran Aduan Awam Daerah Gombak.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
