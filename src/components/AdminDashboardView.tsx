@@ -103,10 +103,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
             <div>
               <div className="text-2xl sm:text-3xl font-black font-mono text-slate-900">
-                1,248
+                {slopes.length}
               </div>
               <p className="text-[11px] text-slate-500 mt-1 font-medium">
-                Berdaftar di 9 daerah Selangor
+                Berdaftar di kawasan MPS
               </p>
             </div>
           </div>
@@ -123,10 +123,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
             <div>
               <div className="text-2xl sm:text-3xl font-black font-mono text-yellow-700">
-                126
+                {slopes.filter((s) => s.status === 'Pemantauan' || s.status === 'Perhatian').length}
               </div>
               <p className="text-[11px] text-slate-500 mt-1 font-medium">
-                Sensor & pemeriksaan dwi-mingguan
+                Status pemantauan / perhatian
               </p>
             </div>
           </div>
@@ -143,10 +143,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
             <div>
               <div className="text-2xl sm:text-3xl font-black font-mono text-red-600">
-                38
+                {slopes.filter((s) => s.status === 'Risiko Tinggi').length}
               </div>
               <p className="text-[11px] text-slate-500 mt-1 font-medium">
-                Zon amaran merah (cth: Ampang/Gombak)
+                Perlu tindakan segera
               </p>
             </div>
           </div>
@@ -163,10 +163,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
             <div>
               <div className="text-2xl sm:text-3xl font-black font-mono text-purple-800">
-                17
+                {activeReportsCount}
               </div>
               <p className="text-[11px] text-slate-500 mt-1 font-medium">
-                4 aduan baharu dalam 24 jam
+                Belum selesai
               </p>
             </div>
           </div>

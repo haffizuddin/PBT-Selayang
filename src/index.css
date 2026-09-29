@@ -37,26 +37,42 @@
   background: white;
 }
 
-/* Marker pulse animations */
-@keyframes ring-pulse-red {
-  0% { transform: scale(0.95); opacity: 0.9; }
-  50% { transform: scale(1.35); opacity: 0.3; }
-  100% { transform: scale(0.95); opacity: 0.9; }
+/* Map pins */
+.slope-pin-wrap { background: none; border: 0; }
+.slope-pin {
+  display: grid; place-items: center;
+  width: 22px; height: 22px; margin: 2px;
+  border-radius: 9999px; border: 3px solid #fff;
+  background: var(--pin); color: #fff;
+  font: 800 12px/1 inherit;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
+  cursor: pointer;
+}
+.slope-pin--urgent { animation: pin-pulse 2s infinite; }
+@keyframes pin-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(239 68 68 / 0.55), 0 1px 4px rgb(0 0 0 / 0.35); }
+  50% { box-shadow: 0 0 0 9px rgb(239 68 68 / 0), 0 1px 4px rgb(0 0 0 / 0.35); }
+}
+.user-pin {
+  display: block; width: 18px; height: 18px; border-radius: 9999px;
+  background: #2563eb; border: 3px solid #fff; box-shadow: 0 0 0 6px rgb(37 99 235 / 0.25);
 }
 
-@keyframes ring-pulse-yellow {
-  0% { transform: scale(0.95); opacity: 0.8; }
-  50% { transform: scale(1.25); opacity: 0.25; }
-  100% { transform: scale(0.95); opacity: 0.8; }
-}
-
-.marker-pulse-red {
-  animation: ring-pulse-red 2s infinite ease-in-out;
-}
-
-.marker-pulse-yellow {
-  animation: ring-pulse-yellow 2.5s infinite ease-in-out;
-}
+/* Map popup: short and plain */
+.slope-popup { padding: 12px 14px; font-size: 13px; color: #0f172a; }
+.slope-popup__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-right: 14px; }
+.slope-popup__top strong { font-size: 15px; font-family: 'JetBrains Mono', ui-monospace, monospace; }
+.slope-popup__pill { font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 9999px; border: 1px solid; white-space: nowrap; }
+.slope-popup__place { margin-top: 4px; color: #475569; }
+.slope-popup__facts { display: flex; gap: 14px; margin-top: 8px; color: #64748b; font-size: 12px; }
+.slope-popup__facts b { color: #0f172a; }
+.slope-popup__actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 12px; }
+.slope-popup__btn { border-radius: 8px; padding: 8px 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+.slope-popup__btn--dark { background: #0f172a; color: #fff; }
+.slope-popup__btn--dark:hover { background: #1e293b; }
+.slope-popup__btn--red { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+.slope-popup__btn--red:hover { background: #fee2e2; }
+.leaflet-container a.leaflet-popup-close-button { top: 6px; right: 6px; }
 
 /* Print styling for QR Signboard */
 @media print {

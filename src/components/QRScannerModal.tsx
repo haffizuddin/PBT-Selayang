@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Slope } from '../types/slope';
 import jsQR from 'jsqr';
-import { generateSlopeQRDataUrl, getSlopePermanentUrl, extractSlopeId } from '../utils/qrHelper';
-import { 
-  QrCode, X, Camera, ArrowRight, Smartphone, Sparkles, MapPin, 
-  CheckCircle2, RefreshCw, Zap, ExternalLink, ShieldAlert, ChevronRight 
-} from 'lucide-react';
+import { Slope } from '../types/slope';
+import { generateSlopeQRDataUrl, extractSlopeId } from '../utils/qrHelper';
+import { STATUS_COLORS } from './InteractiveMap';
+import { X, Camera, CameraOff, CheckCircle2, ChevronRight } from 'lucide-react';
 
 interface QRScannerModalProps {
   slopes: Slope[];
@@ -13,87 +11,59 @@ interface QRScannerModalProps {
   onScanComplete: (slope: Slope) => void;
 }
 
-export const QRScannerModal: React.FC<QRScannerModalProps> = ({
-  slopes,
-  onClose,
-  onScanComplete
-}) => {
-  // Default to primary slope MPS-SEL-0012 or first slope
-  const [selectedSlopeId, setSelectedSlopeId] = useState<string>(
-    slopes.find((s) => s.id === 'MPS-SEL-0012')?.id || slopes[0]?.id || ''
-  );
-  const [isScanning, setIsScanning] = useState(false);
-  const [scannedSuccess, setScannedSuccess] = useState<Slope | null>(null);
-  const [qrPreviewUrl, setQrPreviewUrl] = useState<string>('');
-  const [torchActive, setTorchActive] = useState(false);
-  const [useRealCamera, setUseRealCamera] = useState(false);
-  const [cameraError, setCameraError] = useState<string | null>(null);
-  
+export const QRScannerModal: React.FC<QRScannerModalProps> = ({ slopes, onClose, onScanComplete }) => {
+  const [cameraOn, setCameraOn] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [found, setFound] = useState<Slope | null>(null);
+  const [demoSlope, setDemoSlope] = useState<Slope>(slopes[0]);
+  const [demoQr, setDemoQr] = useState('');
+
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const selectedSlope = slopes.find((s) => s.id === selectedSlopeId) || slopes[0];
+  const stopCamera = () => {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    setCameraOn(false);
+  };
 
-  // Generate QR image for the targeted slope in viewfinder
   useEffect(() => {
-    if (selectedSlope) {
-      generateSlopeQRDataUrl(selectedSlope.id).then(setQrPreviewUrl);
-    }
-  }, [selectedSlope]);
+    generateSlopeQRDataUrl(demoSlope.id).then(setDemoQr);
+  }, [demoSlope]);
 
-  // Handle ESC key to close modal
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      streamRef.current?.getTracks().forEach((t) => t.stop());
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
-  // Stop camera stream on unmount
-  useEffect(() => {
-    return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-      }
-    };
-  }, []);
+  const succeed = (slope: Slope) => {
+    stopCamera();
+    setFound(slope);
+    setTimeout(() => onScanComplete(slope), 900);
+  };
 
-  // Try real camera if requested
-  const handleToggleRealCamera = async () => {
-    if (useRealCamera) {
-      // Turn off
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-        streamRef.current = null;
-      }
-      setUseRealCamera(false);
+  const startCamera = async () => {
+    setMessage(null);
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setMessage('Pelayar ini tidak menyokong kamera. Guna pilihan demo di bawah.');
       return;
     }
-
     try {
-      setCameraError(null);
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment' }
-        });
-        streamRef.current = stream;
-        // <video> only mounts after this state change; the effect below attaches the stream
-        setUseRealCamera(true);
-      } else {
-        setCameraError('Kamera tidak disokong pada pelayar ini.');
-      }
-    } catch (err) {
-      setCameraError('Akses kamera tidak dibenarkan atau tidak tersedia.');
-      setUseRealCamera(false);
+      streamRef.current = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      // <video> mounts after this state change; the effect below attaches the stream
+      setCameraOn(true);
+    } catch {
+      setMessage('Kamera tidak dibenarkan. Benarkan akses kamera, atau guna pilihan demo di bawah.');
     }
   };
 
-  // Attach camera stream and decode real QR codes frame by frame
+  // Decode frames from the live camera
   useEffect(() => {
-    if (!useRealCamera || !videoRef.current || !streamRef.current) return;
+    if (!cameraOn || !videoRef.current || !streamRef.current) return;
     const video = videoRef.current;
     video.srcObject = streamRef.current;
     video.play().catch(() => {});
@@ -113,15 +83,14 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
         const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
         if (code?.data) {
-          const slopeId = extractSlopeId(code.data);
-          const match = slopeId && slopes.find((s) => s.id.toLowerCase() === slopeId.toLowerCase());
+          const id = extractSlopeId(code.data);
+          const match = id && slopes.find((s) => s.id.toLowerCase() === id.toLowerCase());
           if (match) {
             stopped = true;
-            setCameraError(null);
-            handleTriggerScan(match);
+            succeed(match);
             return;
           }
-          setCameraError(`Kod QR dikesan tetapi bukan plat cerun MPS: ${code.data.slice(0, 60)}`);
+          setMessage('Kod QR ini bukan plat cerun MPS.');
         }
       }
       raf = requestAnimationFrame(tick);
@@ -131,272 +100,89 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
       stopped = true;
       cancelAnimationFrame(raf);
     };
-  }, [useRealCamera, slopes]);
-
-  // Trigger scan action
-  const handleTriggerScan = (targetSlope?: Slope) => {
-    const slopeToScan = targetSlope || selectedSlope;
-    if (!slopeToScan) return;
-
-    setIsScanning(true);
-    setScannedSuccess(null);
-
-    // Simulate viewfinder focus & recognition delay
-    setTimeout(() => {
-      setIsScanning(false);
-      setScannedSuccess(slopeToScan);
-
-      // Transition to slope profile after brief success confirmation
-      setTimeout(() => {
-        onScanComplete(slopeToScan);
-      }, 700);
-    }, 500);
-  };
+  }, [cameraOn, slopes]);
 
   return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-3 sm:p-4 overflow-y-auto"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+    <div
+      className="fixed inset-0 z-[1000] flex items-end sm:items-center justify-center bg-slate-950/70 sm:p-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-slate-900 text-white rounded-3xl shadow-2xl max-w-lg w-full border border-slate-800 overflow-hidden my-4 flex flex-col max-h-[92vh]">
-        
-        {/* Top Header */}
-        <div className="p-3.5 sm:p-4 border-b border-slate-800 flex items-center justify-between shrink-0 bg-slate-950/90">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center font-black text-xs">
-              <Camera className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="font-bold text-sm text-slate-100 flex items-center gap-2">
-                <span>Simulasi Imbas Kod QR Tapak</span>
-                <span className="text-[10px] bg-amber-500/20 text-amber-300 font-mono font-bold px-1.5 py-0.2 rounded border border-amber-500/30">
-                  MPS
-                </span>
-              </h3>
-              <p className="text-[11px] text-slate-400">
-                Uji pengalaman orang awam mengimbas kod QR di tiang cerun
-              </p>
-            </div>
+      <div className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[92dvh]">
+        <div className="flex items-center justify-between px-5 pt-4 pb-3">
+          <div>
+            <h2 className="font-semibold text-slate-900">Imbas kod QR cerun</h2>
+            <p className="text-xs text-slate-500">Halakan kamera ke plat QR di tapak cerun</p>
           </div>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition-colors"
-            title="Tutup (Esc)"
-          >
+          <button onClick={onClose} className="p-2 -mr-2 text-slate-500 hover:text-slate-900" aria-label="Tutup">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Viewfinder Camera Area */}
-        <div className="p-4 sm:p-5 flex-1 overflow-y-auto space-y-4">
-          
-          {/* CAMERA VIEWFINDER FRAME */}
-          <div className="relative mx-auto w-full max-w-[340px] aspect-square bg-slate-950 rounded-2xl border-2 border-slate-800 flex flex-col items-center justify-center overflow-hidden shadow-2xl group select-none">
-            
-            {/* Real Camera Video Feed (if toggled) */}
-            {useRealCamera ? (
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="absolute inset-0 w-full h-full object-cover"
-              />
+        <div className="px-5 overflow-y-auto">
+          {/* Viewfinder */}
+          <div className="relative aspect-square w-full max-w-[300px] mx-auto rounded-2xl overflow-hidden bg-slate-900">
+            {cameraOn ? (
+              <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover" />
             ) : (
-              /* Simulated Camera Scene with ONLY the QR Code in Focus */
-              <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center p-4">
-                {/* Background subtle camera noise */}
-                <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#f59e0b_1px,transparent_1px)] [background-size:16px_16px]"></div>
-                
-                {/* ONLY THE QR CODE IN FOCUS (Clean, pure QR square) */}
-                <div 
-                  onClick={() => handleTriggerScan(selectedSlope)}
-                  className="relative z-10 bg-white p-3 rounded-2xl shadow-2xl cursor-pointer hover:scale-105 transition-transform duration-200 border-2 border-white/90"
-                  title="Ketik untuk imbas kod QR ini"
-                >
-                  {qrPreviewUrl ? (
-                    <img
-                      src={qrPreviewUrl}
-                      alt={`QR ${selectedSlope?.id}`}
-                      className="w-44 h-44 sm:w-48 sm:h-48 object-contain block mx-auto"
-                    />
-                  ) : (
-                    <div className="w-44 h-44 flex items-center justify-center text-slate-800">
-                      <QrCode className="w-32 h-32" />
-                    </div>
-                  )}
-                </div>
-
-                <div className="text-[10px] font-mono text-slate-400 mt-2 font-semibold">
-                  {selectedSlope?.id} · {selectedSlope?.location}
-                </div>
-              </div>
-            )}
-
-            {/* Viewfinder Target Framing Brackets */}
-            <div className="absolute inset-6 border border-amber-400/30 rounded-2xl pointer-events-none flex flex-col justify-between p-2 z-20">
-              <div className="w-full flex justify-between">
-                <span className="w-6 h-6 border-t-3 border-l-3 border-amber-400 rounded-tl-sm"></span>
-                <span className="w-6 h-6 border-t-3 border-r-3 border-amber-400 rounded-tr-sm"></span>
-              </div>
-
-              {/* Scanning Laser Beam Effect */}
-              <div className={`w-full h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_12px_#f59e0b] ${
-                isScanning ? 'animate-bounce duration-300' : 'animate-pulse'
-              }`}></div>
-
-              <div className="w-full flex justify-between">
-                <span className="w-6 h-6 border-b-3 border-l-3 border-amber-400 rounded-bl-sm"></span>
-                <span className="w-6 h-6 border-b-3 border-r-3 border-amber-400 rounded-br-sm"></span>
-              </div>
-            </div>
-
-            {/* Success Overlay Banner */}
-            {scannedSuccess && (
-              <div className="absolute inset-0 z-30 bg-emerald-950/85 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center animate-in fade-in zoom-in-95 duration-200">
-                <CheckCircle2 className="w-14 h-14 text-emerald-400 animate-bounce mb-2" />
-                <span className="text-xs font-bold uppercase tracking-wider text-emerald-300">
-                  Kod QR Berjaya Dikesan!
-                </span>
-                <span className="font-mono text-base font-black text-white mt-0.5">
-                  {scannedSuccess.id}
-                </span>
-                <span className="text-xs text-emerald-200 mt-1">
-                  {scannedSuccess.location}
-                </span>
-                <span className="text-[10px] text-emerald-300 mt-2 font-mono bg-emerald-900/60 px-2 py-0.5 rounded">
-                  Membuka Profil Cerun...
-                </span>
-              </div>
-            )}
-
-            {/* Top Viewfinder Status Overlay */}
-            <div className="absolute top-3 left-3 right-3 z-20 flex items-center justify-between pointer-events-none">
-              <span className="inline-flex items-center gap-1.5 bg-slate-950/80 backdrop-blur-xs text-[10px] text-amber-300 font-mono px-2 py-0.5 rounded-full border border-amber-500/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping"></span>
-                <span>KAMERA AKTIF</span>
-              </span>
               <button
-                type="button"
-                onClick={() => setTorchActive(!torchActive)}
-                className={`p-1.5 rounded-full pointer-events-auto transition-colors ${
-                  torchActive ? 'bg-amber-400 text-slate-950' : 'bg-slate-900/80 text-slate-300 hover:text-white'
-                }`}
-                title="Lampu Suluh (Flash)"
+                onClick={() => succeed(demoSlope)}
+                className="absolute inset-0 grid place-items-center"
+                title="Klik untuk simulasi imbasan"
               >
-                <Zap className="w-3.5 h-3.5" />
+                {demoQr && <img src={demoQr} alt={`Plat QR ${demoSlope.id}`} className="w-44 h-44 rounded-lg" />}
               </button>
-            </div>
-
-            {/* Bottom Detected URL Pill */}
-            <div className="absolute bottom-3 inset-x-3 z-20 pointer-events-auto">
-              <div 
-                onClick={() => handleTriggerScan(selectedSlope)}
-                className="bg-slate-900/90 hover:bg-slate-800 text-slate-200 px-3 py-1.5 rounded-xl border border-slate-700/80 flex items-center justify-between text-xs cursor-pointer shadow-lg transition-colors group"
-              >
-                <div className="flex items-center gap-1.5 overflow-hidden">
-                  <QrCode className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  <span className="font-mono text-[10px] text-amber-300 truncate">
-                    {getSlopePermanentUrl(selectedSlope?.id || '')}
-                  </span>
+            )}
+            <div className="pointer-events-none absolute inset-8 rounded-xl border-2 border-amber-400/80" />
+            {found && (
+              <div className="absolute inset-0 bg-emerald-600/95 text-white grid place-items-center text-center p-4">
+                <div>
+                  <CheckCircle2 className="w-12 h-12 mx-auto mb-2" />
+                  <div className="font-mono text-lg font-bold">{found.gis?.idCerun ?? found.id}</div>
+                  <div className="text-sm opacity-90">Membuka maklumat cerun…</div>
                 </div>
-                <span className="text-[10px] font-bold text-amber-400 group-hover:underline shrink-0 ml-1">
-                  Ketik Imbas
-                </span>
               </div>
-            </div>
-
-          </div>
-
-          {/* Primary Action Button: IMBAS SEKARANG */}
-          <div className="space-y-2">
-            <button
-              onClick={() => handleTriggerScan(selectedSlope)}
-              disabled={isScanning}
-              className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg transition-all active:scale-98 disabled:opacity-50"
-            >
-              <Camera className="w-4 h-4 text-slate-950" />
-              <span>
-                {isScanning ? 'Mengimbas Kod QR Tapak...' : `Imbas Kod QR Cerun (${selectedSlope?.id})`}
-              </span>
-              <ArrowRight className="w-4 h-4 ml-1" />
-            </button>
-
-            <div className="flex items-center justify-between text-xs text-slate-400 px-1">
-              <span>Di tapak sebenar, imbasan membuka terus URL cerun.</span>
-              <button
-                onClick={handleToggleRealCamera}
-                className="text-amber-400 hover:underline flex items-center gap-1 text-[11px] font-semibold"
-              >
-                <RefreshCw className="w-3 h-3" />
-                <span>{useRealCamera ? 'Guna Simulasi Visual' : 'Guna Kamera Sebenar'}</span>
-              </button>
-            </div>
-            {cameraError && (
-              <p className="text-[11px] text-amber-400/90 text-center">{cameraError}</p>
             )}
           </div>
 
-          {/* QUICK-SELECT SLOPE CARDS (10 Units of MPS) */}
-          <div className="pt-3 border-t border-slate-800 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-300 uppercase tracking-wide">
-                Pilih Plat Cerun MPS untuk Diimbas:
-              </span>
-              <span className="text-[10px] text-slate-400">
-                10 Sampel Berdaftar
-              </span>
-            </div>
+          {message && <p className="mt-3 text-center text-sm text-amber-700">{message}</p>}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
-              {slopes.slice(0, 10).map((s) => {
-                const isSelected = s.id === selectedSlopeId;
-                return (
+          <div className="mt-4">
+            {cameraOn ? (
+              <button onClick={stopCamera} className="w-full flex items-center justify-center gap-2 rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-700">
+                <CameraOff className="w-4 h-4" /> Tutup kamera
+              </button>
+            ) : (
+              <button onClick={startCamera} className="w-full flex items-center justify-center gap-2 rounded-xl bg-slate-900 text-white py-3 text-sm font-semibold">
+                <Camera className="w-4 h-4" /> Buka kamera
+              </button>
+            )}
+          </div>
+
+          {/* Demo: no physical plate at hand */}
+          <div className="mt-5 pb-5">
+            <p className="text-xs font-medium text-slate-500 mb-2">Tiada plat QR? Pilih cerun untuk cuba simulasi:</p>
+            <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200">
+              {slopes.slice(0, 6).map((s) => (
+                <li key={s.id}>
                   <button
-                    key={s.id}
                     onClick={() => {
-                      setSelectedSlopeId(s.id);
-                      handleTriggerScan(s);
+                      setDemoSlope(s);
+                      succeed(s);
                     }}
-                    className={`p-2.5 rounded-xl text-left border transition-all flex items-center justify-between ${
-                      isSelected
-                        ? 'bg-amber-500/15 border-amber-500 text-white shadow-xs'
-                        : 'bg-slate-800/80 hover:bg-slate-800 border-slate-700/80 text-slate-300'
-                    }`}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-slate-50"
                   >
-                    <div className="min-w-0 pr-2">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-mono text-xs font-bold text-amber-400">
-                          {s.id}
-                        </span>
-                        <span className={`text-[8px] px-1.5 py-0.2 rounded font-semibold ${
-                          s.status === 'Normal'
-                            ? 'bg-emerald-500/20 text-emerald-300'
-                            : s.status === 'Pemantauan'
-                            ? 'bg-yellow-500/20 text-yellow-300'
-                            : 'bg-red-500/20 text-red-300'
-                        }`}>
-                          {s.status}
-                        </span>
-                      </div>
-                      <div className="text-[11px] font-medium text-slate-200 truncate mt-0.5">
-                        {s.name}
-                      </div>
-                      <div className="text-[10px] text-slate-400 truncate">
-                        {s.location}
-                      </div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-slate-500 shrink-0" />
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: STATUS_COLORS[s.status] }} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-mono text-sm font-semibold text-slate-900">{s.gis?.idCerun ?? s.id}</span>
+                      <span className="block text-xs text-slate-500 truncate">{s.location}</span>
+                    </span>
+                    <ChevronRight className="w-4 h-4 text-slate-400" />
                   </button>
-                );
-              })}
-            </div>
+                </li>
+              ))}
+            </ul>
           </div>
-
         </div>
-
       </div>
     </div>
   );

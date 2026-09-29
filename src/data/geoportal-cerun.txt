@@ -1,6 +1,7 @@
 # Rekod cerun disalin dari popup Geoportal MPS (geoportal.mps.gov.my/geoportal/peta-gis).
 # Satu rekod = satu blok, dipisah dengan baris kosong. Format: LABEL<tab atau 2+ ruang>NILAI
-# KOORDINAT (lat, lng) tiada dalam popup — tambah sendiri; jika tiada, peta guna anggaran BPK.
+# Koordinat tiada dalam popup. Tambah `KOORDINAT  lat, lng` (tepat) atau
+# `KOORDINAT ANGGARAN  lat, lng` (letak atas jalan, ditanda anggaran). Tiada → anggaran BPK.
 
 ZON AHLI MAJLIS    ZON 6: TUAN MUHAMMAD HUSAINI BIN MOHD YUNOS
 AGENSI MENYELENGGARA    JMG
@@ -13,6 +14,7 @@ NAMA_JLN    JALAN HULU YAM BHARU-BATU CAVES
 TAHAP RISIKO    SANGAT TINGGI
 KELAS KECERUNAN    2
 TINGGI (m)    42.08
+KOORDINAT ANGGARAN    3.2699, 101.6883
 
 ZON AHLI MAJLIS    ZON 6: TUAN MUHAMMAD HUSAINI BIN MOHD YUNOS
 AGENSI MENYELENGGARA    JMG
@@ -25,3 +27,4 @@ NAMA_JLN    JALAN SUNGAI TUA
 TAHAP RISIKO    TINGGI
 KELAS KECERUNAN    1
 TINGGI (m)    5.85
+KOORDINAT ANGGARAN    3.2469, 101.6744

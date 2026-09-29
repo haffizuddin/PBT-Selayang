@@ -72,7 +72,7 @@ export const ReportTrackingView: React.FC<ReportTrackingViewProps> = ({
   return (
     <div className="min-h-screen bg-slate-100/70 pb-16">
       {/* Top Bar */}
-      <div className="bg-white border-b border-slate-200 sticky top-16 z-30 shadow-xs">
+      <div className="bg-white border-b border-slate-200 shadow-xs">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <button
             onClick={onBackToMap}

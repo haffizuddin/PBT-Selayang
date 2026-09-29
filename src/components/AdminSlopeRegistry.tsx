@@ -75,7 +75,7 @@ export const AdminSlopeRegistry: React.FC<AdminSlopeRegistryProps> = ({
   return (
     <div className="min-h-screen bg-slate-100/70 pb-16">
       {/* Top Header */}
-      <div className="bg-white border-b border-slate-200 sticky top-16 z-30 shadow-xs">
+      <div className="bg-white border-b border-slate-200 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button

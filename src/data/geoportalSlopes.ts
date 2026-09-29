@@ -3,7 +3,7 @@ import { GeoportalRecord, RiskLevel, Slope, SlopeStatus } from '../types/slope';
 
 // Approximate centre per planning sub-block, used when a record has no KOORDINAT
 const BPK_CENTRES: Record<string, [number, number]> = {
-  'BPK 4.3': [3.3050, 101.6800],
+  'BPK 4.3': [3.2530, 101.6790], // Kg. Sungai Tua
 };
 const DEFAULT_CENTRE: [number, number] = [3.2600, 101.6500];
 
@@ -21,7 +21,7 @@ const FIELD_MAP: Record<string, keyof GeoportalRecord> = {
   'TINGGI (m)': 'tinggi',
 };
 
-type ParsedRecord = { record: GeoportalRecord; coords: [number, number] | undefined };
+type ParsedRecord = { record: GeoportalRecord; coords: [number, number] | undefined; coordsApprox: boolean };
 
 export function parseGeoportalText(text: string): ParsedRecord[] {
   return text
@@ -29,20 +29,24 @@ export function parseGeoportalText(text: string): ParsedRecord[] {
     .map((block) => {
       const record: Partial<GeoportalRecord> = {};
       let coords: [number, number] | undefined;
+      let coordsApprox = false;
       for (const line of block.split('\n')) {
         if (!line.trim() || line.trim().startsWith('#')) continue;
         const m = line.trim().match(/^(.+?)(?:\t+|\s{2,})(.+)$/);
         if (!m) continue;
         const label = m[1].trim().toUpperCase().replace('(M)', '(m)');
         const value = m[2].trim();
-        if (label === 'KOORDINAT') {
+        if (label === 'KOORDINAT' || label === 'KOORDINAT ANGGARAN') {
           const [lat, lng] = value.split(',').map((v) => parseFloat(v));
-          if (!isNaN(lat) && !isNaN(lng)) coords = [lat, lng];
+          if (!isNaN(lat) && !isNaN(lng)) {
+            coords = [lat, lng];
+            coordsApprox = label === 'KOORDINAT ANGGARAN';
+          }
         } else if (FIELD_MAP[label]) {
           record[FIELD_MAP[label]] = value;
         }
       }
-      return record.idCerun ? { record: record as GeoportalRecord, coords } : null;
+      return record.idCerun ? { record: record as GeoportalRecord, coords, coordsApprox } : null;
     })
     .filter((r): r is ParsedRecord => r !== null);
 }
@@ -62,7 +66,7 @@ const toStatus = (risk: RiskLevel): SlopeStatus =>
 
 const titleCase = (s: string) => s.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 
-export function geoportalToSlope({ record, coords }: ParsedRecord, index: number): Slope {
+export function geoportalToSlope({ record, coords, coordsApprox }: ParsedRecord, index: number): Slope {
   const risk = toRisk(record.tahapRisiko || record.tahapBahaya || '');
   const bpkCode = (record.blokPerancanganKecil || '').split(':')[0].trim();
   const bpkName = titleCase((record.blokPerancanganKecil || '').split(':')[1]?.trim() || '');
@@ -79,7 +83,7 @@ export function geoportalToSlope({ record, coords }: ParsedRecord, index: number
     district: 'Gombak',
     pbt: 'Majlis Perbandaran Selayang (MPS)',
     coordinates: coords || approx,
-    coordinatesApprox: !coords,
+    coordinatesApprox: !coords || coordsApprox,
     slopeType: 'Cerun Potongan',
     height: parseFloat(record.tinggi) || 0,
     gradient: 0,

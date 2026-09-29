@@ -19,7 +19,6 @@ import { AdminAddSlopeModal } from './components/AdminAddSlopeModal';
 import { QRSignboardModal } from './components/QRSignboardModal';
 import { QRScannerModal } from './components/QRScannerModal';
 import { EmergencyModal } from './components/EmergencyModal';
-import { DemoScenarioHelper } from './components/DemoScenarioHelper';
 import { QRGalleryView } from './components/QRGalleryView';
 
 export default function App() {
@@ -145,36 +144,23 @@ export default function App() {
     );
   };
 
-  // Main Demo Scenario (Prompt Section 19) quick-jump handler
-  const handleTriggerDemoScenario = () => {
-    const demoSlope = slopes.find((s) => s.id === 'MPS-SEL-0012') || slopes[0];
-    setSelectedSlope(demoSlope);
-    handleNavigate('slope-detail', demoSlope);
-  };
-
-  // Jump to specific step in the demo sequence
+  // Header steps: the demo walkthrough is also the main navigation
   const handleJumpToStep = (stepNumber: number) => {
-    const demoSlope = slopes.find((s) => s.id === 'MPS-SEL-0012') || slopes[0];
-    setSelectedSlope(demoSlope);
+    const slope = selectedSlope || slopes.find((s) => s.id === 'MPS-SEL-0012') || slopes[0];
+    setSelectedSlope(slope);
 
     switch (stepNumber) {
-      case 1:
-        handleNavigate('map');
-        break;
       case 2:
-        handleNavigate('slope-detail', demoSlope);
+        handleNavigate('slope-detail', slope);
         break;
       case 3:
         handleNavigate('report-issue');
         break;
       case 4:
-        const demoReport = reports.find((r) => r.id === 'RPT-2026-00821') || reports[0];
-        setActiveReport(demoReport);
-        handleNavigate('report-success');
+        handleNavigate('track-report');
         break;
       case 5:
-        setTrackingReportId('RPT-2026-00821');
-        handleNavigate('track-report');
+        handleNavigate('qr-gallery');
         break;
       case 6:
         handleNavigate('admin-dashboard');
@@ -189,9 +175,8 @@ export default function App() {
       {/* Malaysian Government / PBT Navigation Header */}
       <Header
         currentView={currentView}
-        onNavigate={handleNavigate}
+        onJumpToStep={handleJumpToStep}
         onOpenQRScanner={() => setShowQRScanner(true)}
-        onTriggerDemoScenario={handleTriggerDemoScenario}
         onOpenEmergencyModal={() => setShowEmergencyModal(true)}
       />
 
@@ -283,14 +268,9 @@ export default function App() {
         )}
       </main>
 
-      {/* Floating Demo Scenario Guide Helper (Prompt Section 19) */}
-      <DemoScenarioHelper
-        currentView={currentView}
-        onJumpToStep={handleJumpToStep}
-      />
 
-      {/* Official Malaysian PBT Footer */}
-      <Footer onOpenEmergencyModal={() => setShowEmergencyModal(true)} />
+      {/* The map fills the screen, so no footer there */}
+      {currentView !== 'map' && <Footer onOpenEmergencyModal={() => setShowEmergencyModal(true)} />}
 
       {/* MODALS */}
       {/* 1. Printable QR Signboard Modal (Enhanced Fit Screen) */}
