@@ -24,16 +24,16 @@ export const SlopeQuickView: React.FC<SlopeQuickViewProps> = ({ slope, onClose, 
 
   return (
     <div
-      className="fixed inset-0 z-[950] grid place-items-center bg-slate-950/40 p-4"
+      className="fixed inset-0 z-[950] grid place-items-center bg-slate-950/40 px-4 py-8"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="slope-quick-title"
-        className="w-full max-w-sm max-h-[85dvh] flex flex-col rounded-2xl bg-white shadow-2xl"
+        className="w-full max-w-sm max-h-[75dvh] flex flex-col rounded-2xl bg-white shadow-2xl"
       >
-        <div className="flex items-start gap-3 px-4 pt-4 pb-3 border-b border-slate-100">
+        <div className="flex items-start gap-3 px-5 pt-6 pb-4 border-b border-slate-100">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <h2 id="slope-quick-title" className="font-mono text-lg font-bold text-slate-900">
@@ -46,14 +46,14 @@ export const SlopeQuickView: React.FC<SlopeQuickViewProps> = ({ slope, onClose, 
                 {slope.status}
               </span>
             </div>
-            <p className="text-sm text-slate-600 mt-0.5">{slope.location}</p>
+            <p className="text-sm text-slate-600 mt-1.5">{slope.location}</p>
           </div>
-          <button onClick={onClose} className="p-1.5 -mr-1 text-slate-400 hover:text-slate-900" aria-label="Tutup">
+          <button onClick={onClose} className="p-1.5 -mr-1.5 -mt-1 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100" aria-label="Tutup">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="overflow-y-auto px-4 py-3">
+        <div className="overflow-y-auto px-5 py-4">
           <dl className="grid grid-cols-2 gap-2">
             {slopeKeyFacts(slope).map(([label, value]) => (
               <div key={label} className="rounded-lg bg-slate-50 px-2.5 py-1.5">
@@ -75,7 +75,7 @@ export const SlopeQuickView: React.FC<SlopeQuickViewProps> = ({ slope, onClose, 
           {slope.coordinatesApprox && <p className="mt-2 text-[11px] text-slate-500">Lokasi pada peta ialah anggaran.</p>}
         </div>
 
-        <div className="grid grid-cols-2 gap-2 p-4 pt-3 border-t border-slate-100">
+        <div className="grid grid-cols-2 gap-2 px-5 py-4 border-t border-slate-100">
           <button
             onClick={() => onReport(slope)}
             className="flex items-center justify-center gap-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold py-2.5"
